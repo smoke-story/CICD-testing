@@ -1,0 +1,55 @@
+name: Playwright Tests # Yf
+on: # Этот блок определяет, что задача (jobs) будет запускаться при пуше (push) в ветки main или master, 
+    # а также при создании pull request в этих ветках.
+    push:
+        branches: [ main, master ]
+    pull_request:
+        branches: [ main, master ]
+
+jobs:                                                           # Определение Задачи
+    test:                                                       # это имя работы (job).
+        timeout-minutes: 60
+        runs-on: ubuntu-latest       #  определяет, что работа будет выполняться на виртуальной машине с последней версией Ubuntu.
+        steps:    # Шаги выполнения работы
+            - uses: actions/checkout@v5  # Этот шаг использует действие для клонирования кода из текущего репозитория.
+
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                python-version: '3.13' # Этот шаг использует действие actions/setup-python@v4 для установки Python версии 3.13
+            - name: Install dependencies
+              run: |    # Обновляет pip и устанавливает зависимости из requirements.txt
+                python -m pip install --upgrade pip
+                pip install -r requirements.txt
+            - name: Ensure browsers are installed
+              run: python -m playwright install --with-deps # установка браузеров для тестов с Playwright
+            - name: Run your tests
+              run: pytest -s -v
+            - uses: actions/upload-artifact@v4 # действие для загрузки артефактов (Allure) из директории reports/ 
+              if: ${{ !cancelled() }}
+              with:
+                name: allure_report
+                path: reports/
+            - name: Get Allure history
+              uses: actions/checkout@v2 # Используется для клонирования репозитория. В данном случае используется версия v2 
+              if: always()              # Шаг выполняется всегда, даже если предыдущие шаги завершились неудачно.
+              continue-on-error: true   # Продолжает выполнение следующих шагов, даже если этот шаг завершился неудачно.
+              with: # Опции для действия checkout
+                ref: gh-pages # Указывает, что нужно клонировать ветку gh-pages.
+                path: gh-pages # Определяет, что содержимое ветки gh-pages будет клонировано в каталог gh-pages.
+            - uses: simple-elf/allure-report-action@master # Использует GitHub Action для генерации отчета Allure. В данном случае используется версия master действия simple-elf/allure-report-action
+              if: always()
+              id: allure-report  # Уникальный идентификатор шага.
+              with: # Опции для действия allure-report-action.
+                allure_results: reports # Указывает, что результаты тестов для Allure находятся в каталоге reports
+                gh_pages: gh-pages  # Указывает, что содержимое ветки gh-pages было клонировано в каталог gh-pages
+                allure_report: allure-report # Определяет каталог для генерации нового отчета Allure.
+                allure_history: allure-history # Определяет каталог для хранения истории отчетов Allure.
+            - uses: peaceiris/actions-gh-pages@v2 # Использует GitHub Action для публикации содержимого на GitHub Pages
+              if: always()
+              env: # Определяет переменные окружения.
+                PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Использует секретный токен GitHub для аутентификации. 
+                PUBLISH_BRANCH: gh-pages # Указывает ветку, в которую будет опубликован контент (в данном случае gh-pages)
+                PUBLISH_DIR: allure-history # Указывает каталог, содержимое которого будет опубликовано на GitHub Pages
+
