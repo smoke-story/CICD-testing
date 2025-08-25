@@ -27,6 +27,6 @@ jobs:
         with:
           python-version: '3.13'
       - run: |
-          pip install -r requirements.txt
+          pip install -r CICD-testing/requirements.txt
           pytest CICD-testing/tests/test_login.py
 
