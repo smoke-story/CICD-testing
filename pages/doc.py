@@ -1,5 +1,7 @@
+import time
 
 class CiCd:
 
 	def funk(self):
-		[print("Hello, World!") for _ in range(10)]
+		for _ in range(50):
+			print("Hello, World!", time.strftime("%H:%M:%S"))

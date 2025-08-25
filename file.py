@@ -1,4 +1,4 @@
-from .pages.doc import CiCd
+from pages.doc import CiCd
 
 def test():
 
